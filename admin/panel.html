@@ -61,7 +61,7 @@
     }
 
     textarea {
-      min-height: 150px;
+      min-height: 120px;
       resize: vertical;
     }
 
@@ -80,7 +80,7 @@
       background-color: #5f2124;
     }
 
-    #preview {
+    #preview, #json-output {
       background: white;
       padding: 20px;
       border-radius: 12px;
@@ -88,13 +88,10 @@
       width: 380px;
       overflow-y: auto;
       max-height: 600px;
+      word-wrap: break-word;
     }
 
-    #preview h2 {
-      color: #7b2c2f;
-      text-align: center;
-      font-size: 1.5rem;
-    }
+    #preview h2 { color: #7b2c2f; text-align: center; font-size: 1.5rem; }
 
     .meta {
       font-size: 0.9rem;
@@ -109,6 +106,16 @@
       background-color: #7b2c2f;
       color: white;
       font-size: 0.9rem;
+    }
+
+    code {
+      display: block;
+      background-color: #f4f4f4;
+      padding: 10px;
+      border-radius: 8px;
+      margin-top: 10px;
+      white-space: pre-wrap;
+      font-size: 0.85rem;
     }
   </style>
 </head>
@@ -132,19 +139,24 @@
         <option value="Internacional">Internacional</option>
       </select>
 
+      <label for="resumen">Resumen breve:</label>
+      <textarea id="resumen" placeholder="Dos líneas de introducción..."></textarea>
+
       <label for="imagen">Imagen principal:</label>
       <input type="file" id="imagen" accept="image/*" />
 
-      <label for="contenido">Contenido:</label>
+      <label for="contenido">Contenido completo:</label>
       <textarea id="contenido" placeholder="Escribe aquí el contenido del artículo..."></textarea>
 
       <button type="button" onclick="vistaPrevia()">Vista previa</button>
       <button type="button" onclick="generarArticulo()">Generar y Descargar</button>
+      <button type="button" onclick="generarJSON()">Generar entrada JSON</button>
     </form>
 
     <div id="preview">
       <h2>Vista previa</h2>
       <div id="articuloPreview"></div>
+      <div id="json-output"></div>
     </div>
   </main>
 
@@ -156,6 +168,7 @@
       const fecha = document.getElementById('fecha').value;
       const categoria = document.getElementById('categoria').value;
       const contenido = document.getElementById('contenido').value;
+      const resumen = document.getElementById('resumen').value;
       const imagenInput = document.getElementById('imagen');
 
       let imagenHTML = '';
@@ -169,10 +182,10 @@
           <h2 style="color:#7b2c2f;">${titulo}</h2>
           <div class="meta">${fecha} | ${categoria}</div>
           ${imagenHTML}
+          <p><em>${resumen}</em></p>
           <p>${contenido.replace(/\n/g, '<br>')}</p>
         </article>
       `;
-
       document.getElementById('articuloPreview').innerHTML = articuloHTML;
     }
 
@@ -181,6 +194,7 @@
       const fecha = document.getElementById('fecha').value || 'Sin fecha';
       const categoria = document.getElementById('categoria').value || 'General';
       const contenido = document.getElementById('contenido').value || '';
+      const resumen = document.getElementById('resumen').value || '';
 
       const html = `
       <!DOCTYPE html>
@@ -198,31 +212,49 @@
             margin: 40px auto;
             line-height: 1.6;
           }
-          h1 {
-            color: #7b2c2f;
-            text-align: center;
-          }
-          .meta {
-            font-size: 0.9rem;
-            color: #666;
-            text-align: center;
-            margin-bottom: 20px;
-          }
+          h1 { color: #7b2c2f; text-align: center; }
+          .meta { font-size: 0.9rem; color: #666; text-align: center; margin-bottom: 20px; }
+          img { max-width:100%; border-radius:8px; margin-bottom:15px; }
         </style>
       </head>
       <body>
         <h1>${titulo}</h1>
         <div class="meta">${fecha} | ${categoria}</div>
+        <p><em>${resumen}</em></p>
         <article>${contenido.replace(/\n/g, '<br>')}</article>
       </body>
       </html>
       `;
-
       const blob = new Blob([html], { type: 'text/html' });
       const enlace = document.createElement('a');
       enlace.href = URL.createObjectURL(blob);
-      enlace.download = `${titulo.replace(/\s+/g, '_')}.html`;
+      const nombreArchivo = `${titulo.replace(/\s+/g, '_')}.html`;
+      enlace.download = nombreArchivo;
       enlace.click();
+
+      generarJSON(nombreArchivo);
+    }
+
+    function generarJSON(nombreArchivoManual) {
+      const titulo = document.getElementById('titulo').value;
+      const fecha = document.getElementById('fecha').value;
+      const categoria = document.getElementById('categoria').value;
+      const resumen = document.getElementById('resumen').value;
+      const nombreArchivo = nombreArchivoManual || `${titulo.replace(/\s+/g, '_')}.html`;
+
+      const jsonEntrada = {
+        titulo,
+        fecha,
+        categoria,
+        archivo: nombreArchivo,
+        resumen
+      };
+
+      document.getElementById('json-output').innerHTML = `
+        <h3>Entrada para index.json:</h3>
+        <code>${JSON.stringify(jsonEntrada, null, 2)}</code>
+        <p>Copia esto y pégalo dentro de <strong>/articulos/index.json</strong>.</p>
+      `;
     }
   </script>
 </body>
